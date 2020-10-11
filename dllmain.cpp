@@ -49,25 +49,40 @@ std::vector<byte*> scanmem(const std::vector<byte>& bytes)
     return results;
 }
 
+bool unprotect(byte* ptr, int len, PDWORD oldp) {
+    return VirtualProtect((LPVOID)(ptr), len, PAGE_EXECUTE_READWRITE, oldp);
+}
+bool protect(byte* ptr, int len, PDWORD oldp) {
+    DWORD dummy;
+    return VirtualProtect((LPVOID)(ptr), len, *oldp, &dummy);
+}
+
+
 bool apply(std::vector<byte> search, std::vector<byte> replace)
 {
     auto results = scanmem(search);
     if (results.size() != 1)
         return false;
-    void* found = results[0];
+    byte* found = results[0];
+    DWORD protection;
+	unprotect(found, replace.size(), &protection);
     memcpy(found, &replace[0], replace.size());
+	protect(found, replace.size(), &protection);
+    
+
     return true;
 }
 
 
-std::vector<byte> eleSearchBytes = { 0x8D, 0x04, 0x89, 0x01, 0xC0, 0xC3 };
+std::vector<byte> eleSearchBytes = { 0x8D, 0x04, 0x89, 0x03, 0xC0, 0xC3 };
 std::vector<byte> eleReplaceBytes = { 0x48, 0x8B, 0xC1, 0x90, 0x90 };
 
 std::vector<byte> rawSearchBytes = { 0xF3, 0x42, 0x0F, 0x59, 0x04, 0x81 };
 std::vector<byte> rawReplaceBytes = { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
 
-std::vector<byte> awakenSearchBytes = { 0x48, 0x83, 0xec, 0x28, 0x89, 0xc8, 0x83, 0xfa, 0x01, 0x75, 0x1f, 0x0f, 0x57, 0xc0, 0xf3, 0x48, 0x0f, 0x2a, 0xc0 };
+std::vector<byte> awakenSearchBytes = { 0x48, 0x83, 0xec, 0x28, 0x8b, 0xc1, 0x83, 0xfa, 0x01, 0x75, 0x1f, 0x0f, 0x57, 0xc0, 0xf3, 0x48, 0x0f, 0x2a, 0xc0 };
 std::vector<byte> awakenReplaceBytes = { 0x90, 0x90, 0x90, 0x90, 0x90 };
+
 
 void onLoad()
 {
@@ -75,7 +90,10 @@ void onLoad()
     if (results.size() == 1)
     {
         for (auto offs : { 0x20, 0x48, 0x58 }) {
+            DWORD protection;
+            unprotect(results[0] + offs, awakenReplaceBytes.size(), &protection);
 			memcpy(results[0] + offs, &awakenReplaceBytes[0], awakenReplaceBytes.size());
+            protect(results[0] + offs, awakenReplaceBytes.size(), &protection);
         }
     }
     else
