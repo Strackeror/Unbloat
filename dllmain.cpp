@@ -98,15 +98,15 @@ void onLoad()
     }
     else
     {
-        LOG(ERR) << "Unbloat : awakenBloat failed " << results.size();
+        LOG(ERR) << "True weapon damage values : awakenBloat failed " << results.size();
         for (auto ptr : results)
             LOG(ERR) << ptr;
     }
 
     if (!apply(eleSearchBytes, eleReplaceBytes))
-        LOG(ERR) << "Unbloat : eleBloat failed";
+        LOG(ERR) << "True weapon damage values : eleBloat failed";
     if (!apply(rawSearchBytes, rawReplaceBytes))
-        LOG(ERR) << "Unbloat : rawBloat failed";
+        LOG(ERR) << "True weapon damage values : rawBloat failed";
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,
